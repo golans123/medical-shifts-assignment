@@ -207,26 +207,24 @@ def assign_intern_to_all_possible_combinations(num_of_shifts,
 
 
 def return_empty_weekly_calendar(first_day_of_week, last_day_of_week):
-
     days_of_the_week = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturaday"]
     days_of_the_week = days_of_the_week[first_day_of_week:last_day_of_week+1]
     empty_calendar = pd.DataFrame(columns=days_of_the_week, index=[0])
     appended_days = [[j, None] for j in range(first_day_of_week, last_day_of_week + 1)]
-    print(appended_days)
-    print(empty_calendar)
-    empty_calendar.iloc[0, first_day_of_week:last_day_of_week + 1] = appended_days
+    empty_calendar.iloc[0, first_day_of_week:last_day_of_week + 1] = \
+        appended_days[first_day_of_week:last_day_of_week + 1]
     return empty_calendar
 
 
-def return_valid_calendars(preferations_df, max_num_of_shifts, min_num_of_shifts,
-                           number_of_days_in_month, first_day_of_month, last_day_in_week):
+def return_valid_weekly_calendars(preferations_df, max_num_of_shifts, min_num_of_shifts,
+                                  number_of_days_in_month, first_day_of_month, first_day_in_week,
+                                  last_day_in_week):
     """
     each cell of a calendar is a tuple (intern_name, day_num).
 
     algorithm idea:
     * using recursion according to the chosen number of shifts.
-    * no two
-    shifts in a row.
+    * no two shifts in a row.
 
     the theoretical amount of possible calendars in picking any combinations of
     interns, with returns
@@ -241,6 +239,7 @@ def return_valid_calendars(preferations_df, max_num_of_shifts, min_num_of_shifts
      * consider adding shift weight/points to the calendar-cell tuple in order
      to choose best calendar.
 
+    :param first_day_in_week:
     :param last_day_in_week:
     :param min_num_of_shifts:
     :param preferations_df:
@@ -250,26 +249,23 @@ def return_valid_calendars(preferations_df, max_num_of_shifts, min_num_of_shifts
     :return:
     """
     # (calendar, (interns_points_list, interns_num_shifts_list), total_points)
-    calendars = [[return_empty_weekly_calendar(first_day_of_week, last_day_of_week),
-                  [np.zeros(preferations_df.shape[0]), np.zeros(preferations_df.shape[0])], 0]]
-    not_full_calendars = calendars
+    week_calendars = [[return_empty_weekly_calendar(first_day_in_week, last_day_in_week),
+                      [np.zeros(preferations_df.shape[0]), np.zeros(preferations_df.shape[0])], 0]]
+    not_full_calendars = week_calendars
     while not_full_calendars:
         # for each calendar, while week is not full, for each intern, assign one shift per intern.
         for i in range(0, preferations_df.shape[0]):
-            calendars = assign_intern_to_all_possible_combinations(num_of_shifts=1,
-                                                                   calendars=calendars,
-                                                                   last_day_in_week=last_day_in_week,
-                                                                   preferations_df=preferations_df, intern_index=i,
-                                                                   first_day_of_month=first_day_of_month,
-                                                                   number_of_days_in_month=number_of_days_in_month)
+            week_calendars = assign_intern_to_all_possible_combinations(num_of_shifts=1,
+                                                                        calendars=week_calendars,
+                                                                        last_day_in_week=last_day_in_week,
+                                                                        preferations_df=preferations_df, intern_index=i,
+                                                                        first_day_of_month=first_day_of_month,
+                                                                        number_of_days_in_month=number_of_days_in_month)
+        not_full_calendars = []  # fixme - just to test
     # assign each not-full calendar one shift of each intern at the time
     # not_full_calendars = filter_not_full_calendars(calendars)
     # use the not-full calendars
     # full_calendars = [].append(filter_full_calendars(calendars, not_full_calendars))
     # for i in range(max_num_of_shifts-min_num_of_shifts):
     # assign each not-full calendar one shift of each intern at the time - re-check fullness.
-    return calendars
-
-
-if __name__ == '__main__':
-    return_empty_weekly_calendar(1, 3)
+    return week_calendars

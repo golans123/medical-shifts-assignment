@@ -53,12 +53,15 @@ if __name__ == '__main__':
     main_preferations_df = create_preferations_df("preferations_df.xlsx")
     # fixme: there is an error if not all can do minimal shifts
     main_preferations_df = main_preferations_df.iloc[0:3]
-    main_calendars = assign_week_to_calendar.return_valid_calendars(
+    first_day_of_week = 1
+    last_day_of_week = 3
+    main_calendars = assign_week_to_calendar.return_valid_weekly_calendars(
         preferations_df=main_preferations_df,
         max_num_of_shifts=2,
         min_num_of_shifts=1,
         number_of_days_in_month=5,
         first_day_of_month=0,
+        first_day_in_week=1,
         last_day_in_week=4)
 
     # print best 10 for each category:
