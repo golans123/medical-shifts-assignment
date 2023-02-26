@@ -7,16 +7,18 @@ iteration = 0
 
 def return_empty_weekly_calendar(first_day_of_week, last_day_of_week):
     days_of_the_week = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturaday"]
-    days_of_the_week = days_of_the_week[first_day_of_week:last_day_of_week+1]
+    days_of_the_week = days_of_the_week[first_day_of_week:last_day_of_week + 1]
     empty_calendar = pd.DataFrame(columns=days_of_the_week, index=[0])
-    appended_days = [[j, None] for j in range(first_day_of_week, last_day_of_week + 1)]
-    empty_calendar.iloc[0, :] = appended_days
+    # we use np.nan end not None since one can't use np.isnan on a None value
+    appended_days = [[j, np.nan] for j in range(first_day_of_week, last_day_of_week + 1)]
+    empty_calendar[0, :] = appended_days  # empty_calendar.iloc[0, :] = appended_days
     return empty_calendar
 
 
 def update_date(current_day_in_week, current_week_number, day_in_month, last_day_in_week, skip_tomorrow=False):
     """
     an intern can't do two shift two-days in a row.
+    we always send only one week in the current use of the program
     :param current_day_in_week:
     :param current_week_number:
     :param day_in_month:
@@ -49,11 +51,12 @@ def create_calendar_with_shift_today(input_calendar, current_week_number,
                                      preferations_df, day_in_month):
     # input_clanedar[1][0] and input_clanedar[1][0], which are lists, should be
     #  deeply copied too
-    calendar_with_shift_today = [input_calendar[0].copy(deep=True),
+    # input_calendar[0].copy(deep=True),
+    calendar_with_shift_today = [copy.deepcopy(input_calendar[0]),
                                  [copy.deepcopy(input_calendar[1][0]), copy.deepcopy(input_calendar[1][1])],
                                  input_calendar[2]]
-    calendar_with_shift_today[0].iloc[current_week_number].iloc[current_day_in_week]\
-        = [current_day_in_week, intern_index]
+    # calendar_with_shift_today[0].iloc[current_week_number].iloc[current_day_in_week]
+    calendar_with_shift_today[0][current_week_number][current_day_in_week] = [current_day_in_week, intern_index]
     # update points
     calendar_with_shift_today[1][0][intern_index] += preferations_df.iloc[intern_index][5 + day_in_month]
     calendar_with_shift_today[1][1][intern_index] += 1
@@ -84,7 +87,8 @@ def update_calendars(input_calendar, intern_index, preferations_df, day_in_month
     original_current_day_in_week, original_current_week_number, original_day_in_month = \
         current_day_in_week, current_week_number, day_in_month
     # with shift today, check if day is not already occupied
-    if input_calendar[0].iloc[current_week_number].iloc[current_day_in_week][1] is None:
+    # input_calendar[0].iloc[current_week_number].iloc[current_day_in_week][1] is None:
+    if input_calendar[0][current_week_number][current_day_in_week][1] is np.nan:
         calendar_with_shift_today = \
             create_calendar_with_shift_today(input_calendar,
                                              current_week_number,
@@ -105,8 +109,10 @@ def update_calendars(input_calendar, intern_index, preferations_df, day_in_month
         update_date(original_current_day_in_week, original_current_week_number, original_day_in_month, last_day_in_week,
                     skip_tomorrow=False)
     # without shift today
-    calendar_without_shift_today = [input_calendar[0].copy(deep=True),
-                                    [input_calendar[1][0], input_calendar[1][1]], input_calendar[2]]
+    # input_calendar[0].copy(deep=True),
+    calendar_without_shift_today = [copy.deepcopy(input_calendar[0]),
+                                    [copy.deepcopy(input_calendar[1][0]), copy.deepcopy(input_calendar[1][1])],
+                                    input_calendar[2]]
     calendars = assign_intern_recursively(shift_number, shifts_to_do, current_week_number,
                                           current_day_in_week,
                                           last_day_in_week,
@@ -123,7 +129,8 @@ def assign_intern_recursively(shift_number, shifts_to_do, current_week_number,
                               first_day_of_month, day_in_month,
                               number_of_days_in_month, calendars):
     """
-    there is no need to return calendars in the recursion since it's immutable
+    there is no need to return calendars in the recursion since it's
+    current_week_number always equals zero since we always send only one week.
     :param shift_number:
     :param shifts_to_do:
     :param current_week_number:
@@ -144,7 +151,11 @@ def assign_intern_recursively(shift_number, shifts_to_do, current_week_number,
     globals()["iteration"] += 1
     ###############
     if shift_number == shifts_to_do:
-        calendars.append(input_calendar)
+        if len(calendars) == 0:
+            calendars = np.array([input_calendar[0], input_calendar[1], input_calendar[2]], dtype=object)
+        else:
+            calendars = np.vstack((calendars,
+                                   np.array([input_calendar[0], input_calendar[1], input_calendar[2]], dtype=object)))
         return calendars
     else:
         # not in bans list
@@ -165,15 +176,17 @@ def assign_intern_recursively(shift_number, shifts_to_do, current_week_number,
                 return calendars
         else:
             # recursion stop condition - end of month (day_in_month >= 0)
-            # fixme: for the case where the last day is banned, checking arrival for the last day
+            # fixme: for the case where the last day is banned, checking equality to the the last day
             #  would not suffice, so we need... complete. also, if input_calendar is already full
-            if ((day_in_month-1) == number_of_days_in_month) or (day_in_month == number_of_days_in_month):
+            if ((day_in_month - 1) == number_of_days_in_month) or (day_in_month == number_of_days_in_month):
                 return calendars
-            else:  # fixme
+            else:
                 # without shift today
                 current_day_in_week, current_week_number, day_in_month = \
-                    update_date(current_day_in_week, current_week_number, day_in_month, last_day_in_week, skip_tomorrow=False)
-                calendar_without_shift_today = [input_calendar[0].copy(deep=True),
+                    update_date(current_day_in_week, current_week_number, day_in_month, last_day_in_week,
+                                skip_tomorrow=False)
+                # input_calendar[0].copy(deep=True),
+                calendar_without_shift_today = [copy.deepcopy(input_calendar[0]),
                                                 [input_calendar[1][0], input_calendar[1][1]], input_calendar[2]]
                 return assign_intern_recursively(shift_number, shifts_to_do, current_week_number,
                                                  current_day_in_week, last_day_in_week,
@@ -185,12 +198,25 @@ def assign_intern_recursively(shift_number, shifts_to_do, current_week_number,
 def assign_intern_to_all_possible_combinations(min_num_of_shifts, max_num_of_shifts,
                                                calendars, last_day_in_week, preferations_df,
                                                intern_index, first_day_of_month, number_of_days_in_month):
-    new_calendars = []
+    """
+    current_week_number should always be equal to zero since we always send only one week.
+    :param min_num_of_shifts:
+    :param max_num_of_shifts:
+    :param calendars:
+    :param last_day_in_week:
+    :param preferations_df:
+    :param intern_index:
+    :param first_day_of_month: is actually `first_day_of_week` since in the current use of the program a month is a
+    single week
+    :param number_of_days_in_month:
+    :return:
+    """
+    new_calendars = np.array([])
     # try all possible amounts of shifts
     for i in range(min_num_of_shifts, max_num_of_shifts + 1):
         for j in range(len(calendars)):
             new_calendars = assign_intern_recursively(shift_number=0, shifts_to_do=i, current_week_number=0,
-                                                      current_day_in_week=0,
+                                                      current_day_in_week=first_day_of_month,
                                                       last_day_in_week=last_day_in_week,
                                                       preferations_df=preferations_df,
                                                       input_calendar=calendars[j],
@@ -199,15 +225,14 @@ def assign_intern_to_all_possible_combinations(min_num_of_shifts, max_num_of_shi
                                                       day_in_month=0,
                                                       number_of_days_in_month=number_of_days_in_month,
                                                       calendars=new_calendars)
-            # fixme: this test line might need to catch more cases
             # for the case where all calendars are full
-            if not new_calendars:
+            if not new_calendars.tolist():
                 new_calendars = calendars
     # assign to calendars the list of all most up-to-date calendars
     return new_calendars
 
 
-def return_valid_weekly_calendars(preferations_df, max_num_of_shifts, min_num_of_shifts,
+def return_valid_weekly_calendars(preferations_df, interns_permutation, max_num_of_shifts, min_num_of_shifts,
                                   number_of_days_in_month, current_week, first_day_of_month,
                                   last_day_in_week):
     """
@@ -234,6 +259,9 @@ def return_valid_weekly_calendars(preferations_df, max_num_of_shifts, min_num_of
      for later development:
      * ER shifts are more expensive than department shifts.
 
+    :param interns_permutation: an order of the interns' indices (according to preferations df).
+    :param current_week: anumpy array of shape (1, 7), each element is [day_number, intern_index], can we used with
+    Numba.
     :param last_day_in_week:
     :param min_num_of_shifts:
     :param preferations_df:
@@ -244,9 +272,11 @@ def return_valid_weekly_calendars(preferations_df, max_num_of_shifts, min_num_of
     """
     # (calendar, (interns_points_list, interns_num_shifts_list), total_points)
     # todo: current week was return_empty_weekly_calendar(first_day_in_week, last_day_in_week)
-    week_calendars = [[current_week,
-                      [np.zeros(preferations_df.shape[0]), np.zeros(preferations_df.shape[0])], 0]]
-    for i in range(0, preferations_df.shape[0]):
+    # current week is a numpy  todo: use numba in functions where needed (do benchmarks)
+    week_calendars = np.array(
+        [[current_week, [np.zeros(preferations_df.shape[0]), np.zeros(preferations_df.shape[0])], 0]], dtype=object)
+    # return week_calendars
+    for i in interns_permutation:
         week_calendars = assign_intern_to_all_possible_combinations(min_num_of_shifts=min_num_of_shifts,
                                                                     max_num_of_shifts=max_num_of_shifts,
                                                                     calendars=week_calendars,
