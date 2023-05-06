@@ -274,7 +274,8 @@ def handle_current_week_assignment(preferations_df, max_num_of_shifts_per_week, 
 
 
 def create_full_calendar(preferations_df, max_num_of_shifts_per_week, max_num_of_shifts, min_num_of_shifts_per_week,
-                         min_num_of_shifts, number_of_days_in_month, first_day_of_month, interns_permutation):
+                         min_num_of_shifts, number_of_days_in_month, first_day_of_month, interns_permutation,
+                         input_statistics):
     """
 
     extra_interns_list is utilized only if there are extra interns, but since it's in a called subroutine, we will
@@ -303,12 +304,12 @@ def create_full_calendar(preferations_df, max_num_of_shifts_per_week, max_num_of
             continue
         extra_interns_list = create_extra_interns_list(interns_permutation, min_num_of_shifts_per_week,
                                                        num_of_days_in_week)
-        calendar_to_fill, best_week_calendars_list, monthly_interns_num_shifts_array, monthly_interns_points_array, \
-            interns_permutation, best_week_calendar = \
+        calendar_to_fill, best_week_calendars_list, monthly_interns_num_shifts_array, monthly_interns_points_array,\
+            interns_permutation, best_week_calendar, should_create_week_calendars_as_numpy_files = \
             handle_current_week_assignment(preferations_df, max_num_of_shifts_per_week, max_num_of_shifts,
                                            min_num_of_shifts_per_week, min_num_of_shifts, calendar_to_fill,
                                            week_number, best_week_calendars_list,
                                            monthly_interns_num_shifts_array, monthly_interns_points_array,
                                            interns_permutation, extra_interns_list, best_week_calendar,
-                                           current_week_calendars_were_calculated)
+                                           current_week_calendars_were_calculated, input_statistics)
     return calendar_to_fill

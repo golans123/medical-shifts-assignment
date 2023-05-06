@@ -124,6 +124,7 @@ def fill_calendar_from_chosen_week_till_month_end(preferations_df_xlsx_path="pre
     calendar_to_fill = create_week_calendars_files.create_empty_calendar(number_of_days_in_month, first_day_of_month)
     best_week_calendars_list = []
     extra_interns_lists = [[], [], [], [], [], []]  # has an extra_interns_list for each week.
+    all_week_calendars_list = [[], [], [], [], [], []]  # todo: for the app
     # are zeroed only here
     monthly_interns_num_shifts_array = np.zeros(amount_of_interns)
     monthly_interns_points_array = np.zeros(amount_of_interns)
@@ -143,6 +144,7 @@ def fill_calendar_from_chosen_week_till_month_end(preferations_df_xlsx_path="pre
             break
         if should_continue:  # check a different useful permutation in the current week
             continue
+        all_week_calendars_list[week_number].append(current_week_calendars)  # todo: for the app
         # part 2 - choose_best_calendar from file
         should_break, calendar_to_fill, best_week_calendars_list, \
             monthly_interns_num_shifts_array, monthly_interns_points_array, interns_permutation, \
@@ -160,17 +162,18 @@ def fill_calendar_from_chosen_week_till_month_end(preferations_df_xlsx_path="pre
             continue  # do re-calculate extra interns list
         else:
             week_number += 1  # calculate extra interns list
-    return calendar_to_fill, best_week_calendars_list, extra_interns_lists, monthly_interns_num_shifts_array,\
-        monthly_interns_points_array
+    return calendar_to_fill, best_week_calendars_list, extra_interns_lists, monthly_interns_num_shifts_array, \
+        monthly_interns_points_array, all_week_calendars_list
 
 
 if __name__ == '__main__':
-    calendar_to_fill = fill_calendar_from_chosen_week_till_month_end(preferations_df_xlsx_path="preferations_df.xlsx",
-                                                                     max_num_of_shifts_per_week=1,
-                                                                     min_num_of_shifts_per_week=1,
-                                                                     number_of_days_in_month=30,
-                                                                     first_day_of_month=1,  # monday
-                                                                     min_num_of_shifts=4,
-                                                                     max_num_of_shifts=6,
-                                                                     week_number=0,
-                                                                     input_statistics=[1])
+    main_calendar_to_fill = fill_calendar_from_chosen_week_till_month_end(
+        preferations_df_xlsx_path="preferations_df.xlsx",
+        max_num_of_shifts_per_week=1,
+        min_num_of_shifts_per_week=1,
+        number_of_days_in_month=30,
+        first_day_of_month=1,  # monday
+        min_num_of_shifts=4,
+        max_num_of_shifts=6,
+        week_number=0,
+        input_statistics=[1])
